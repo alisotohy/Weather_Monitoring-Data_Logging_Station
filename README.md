@@ -1,5 +1,5 @@
-# Weather_Monitoring-Data_Logging_Station
 🌦️ Weather Monitoring & Data Logging Station
+
 Embedded Systems Project — ATmega32
 
 A real-time environmental monitoring station built using the ATmega32 AVR microcontroller. The system continuously acquires environmental data, displays live measurements on an LCD, logs historical records to internal EEPROM, generates threshold-based alarms, and communicates with a PC over UART for data retrieval and diagnostics.
@@ -7,6 +7,7 @@ A real-time environmental monitoring station built using the ATmega32 AVR microc
 This project demonstrates real-time data acquisition, embedded data logging, threshold monitoring, serial communication, and a strict layered embedded software architecture.
 
 📌 Project Overview
+
 Environmental monitoring systems are widely used in agriculture, weather stations, greenhouses, laboratories, warehouses, and smart buildings.
 
 This project implements a compact weather monitoring station capable of continuously collecting sensor measurements, displaying live information on an LCD, storing historical data in EEPROM, generating alarms when environmental limits are exceeded, and allowing users to retrieve logged data and system status through a serial (UART) interface.
@@ -22,23 +23,28 @@ Build reusable, layered embedded drivers
 Apply strict layered software architecture (LIB/Common → MCAL → HAL → APP)
 📋 Functional Requirements
 Real-Time Sensor Reading
+
 The controller continuously samples environmental sensors including:
 
 Temperature Sensor (LM35) — ADC Channel 5 (PA5)
 Light Sensor (LDR) — ADC Channel 6 (PA6)
+
 Sensor acquisition is performed periodically (every 500 ms) using the ADC driver.
 
 Local Status Display
+
 The LCD continuously displays:
 
 Current Temperature
 Light Intensity
 System / Alarm Status
+
 Example:
 
 Temp : 28C
 Light: 72%
 Data Logging
+
 The DataLogger module periodically stores measurements inside EEPROM.
 
 Each record contains:
@@ -46,9 +52,11 @@ Each record contains:
 Record ID (sequence number)
 Temperature
 Light Level
+
 Measurements are saved at a fixed interval (every 5 seconds), with a capacity of up to 60 records.
 
 Data Retrieval
+
 Stored records and system information can be retrieved through UART. Available commands:
 
 READ LOG
@@ -56,25 +64,30 @@ CLEAR LOG
 CURRENT DATA
 SYSTEM STATUS
 HELP
+
 Example output:
 
 Record 15
 Temperature : 29C
 Light       : 68%
 Threshold Alarm
+
 The AlarmManager module compares sensor values against predefined thresholds and fires an edge-triggered alarm (sent once per crossing, not repeated while the condition persists):
 
 Temperature Alarm
 
 High Temperature
 Low Temperature
+
 Light Alarm
 
 Very Low Light
 Very High Light
+
 When a limit is exceeded, a UART notification is sent and the LCD/status output is updated accordingly.
 
 System Monitoring
+
 The Monitoring module continuously tracks:
 
 Temperature & Light readings
@@ -137,6 +150,7 @@ Weather_Station/
 │      BIT_MATH.h
 │
 └── README.md
+
 Each APP/HAL/MCAL module follows a consistent 4-file layout:
 
 ModuleName/
@@ -152,9 +166,11 @@ ModuleName/
    MCAL       -> ADC, GIE, EXTI, TIMER0, UART
     ↑
    LIB/Common -> STD_TYPES, BIT_MATH
+
 Each layer only calls the layer directly beneath it, keeping drivers reusable and hardware details isolated from application logic.
 
 📈 Sampling Schedule
+
 Implemented as a flag-based cooperative scheduler driven by Timer0 (1 ms tick):
 
 Task	Period
@@ -171,6 +187,7 @@ Address	Stored Data
 0x0005	Record 2 (3 bytes)
 0x0008	Record 3 (3 bytes)
 ...	...
+
 Each record occupies 3 bytes (Record ID + Temperature + Light), with a maximum of 60 records.
 
 🚨 Alarm Conditions
@@ -187,6 +204,7 @@ SD Card data logging
 Wi-Fi / IoT cloud dashboard
 Weather trend analysis
 📖 Course Information
+
 Embedded Systems Diploma
 
 Topics Covered
@@ -204,9 +222,11 @@ Seif Alaa Abd El Fattah
 Ahmed Sobhy Mohammed
 Ahmed Ayman Fekry
 👨‍💼 Team Leader
+
 Eng. Hesham Ahmed
 
 📜 License
+
 This project was developed during the NTI Embedded Systems Training Program.
 
 Licensed under the MIT License.
@@ -214,12 +234,15 @@ Licensed under the MIT License.
 Project Organization: Gestell
 
 🙏 Acknowledgment
+
 Special thanks to:
 
 National Telecommunications Institute (NTI)
 Eng. Hesham Ahmed
 Gestell Team
+
 for their guidance and continuous support throughout this project.
 
 ⭐ Final Note
+
 The Weather Monitoring & Data Logging Station demonstrates the core principles of embedded environmental monitoring by integrating real-time sensing, historical data storage, threshold-based alarm generation, and serial communication into a modular, layered embedded system.
