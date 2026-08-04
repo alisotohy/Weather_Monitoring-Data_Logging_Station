@@ -61,15 +61,12 @@ void UARTManager_Task(void)
     {
         ReceivedByte = UDR_Reg; 
 
-        // لو المستخدم ضغط Enter أو وصلنا لآخر حاجة مسموح بها
         if ((ReceivedByte == '\r') || (ReceivedByte == '\n') || (CommandIndex >= (UART_COMMAND_LENGTH - 1)))
         {
             Command[CommandIndex] = '\0'; // ختم الأمر
 
-            // لو الأمر مش فاضي، اشتغل عليه
             if (CommandIndex > 0)
             {
-                // ========== مقارنة الأوامر ==========
                 if (strcmp((char*)Command, CMD_HELP) == 0)
                 {
                     UART_SendStringPolling((uint8_t*)"HELP\r\nSTATUS\r\nCURRENT\r\nREAD LOG\r\nCLEAR LOG\r\n");
@@ -79,21 +76,15 @@ void UARTManager_Task(void)
                     DataLogger_Clear();
                     UART_SendStringPolling((uint8_t*)"LOG CLEARED\r\n");
                 }
-                // ======================================
-                // باقي الأوامر (STATUS, CURRENT, READ LOG) 
-                // هتضيفها هنا لما تكملها
-                // ======================================
+                
             }
 
-            // امسح البايفر عشان الأمر الجاي
             CommandIndex = 0;
         }
         else
         {
-            // خزن الحرف في البايفر
             Command[CommandIndex] = ReceivedByte;
             CommandIndex++;
         }
     }
-    // لو مفيش بايت، الدالة بتخلص في أجزاء من الميكروثانية (مش بتقف)
 }
