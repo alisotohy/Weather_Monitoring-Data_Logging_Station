@@ -1,0 +1,181 @@
+1.LCD
+
+#ifndef LCD_PRIVATE_H
+#define LCD_PRIVATE_H 
+
+#define Lcd_4bitMode               0
+#define Lcd_8bitMode               1
+#define Lcd_ClearScreen           0x01
+  
+#define Lcd_8bitMode2Line5x8F     0x38
+  
+#define Lcd_DisplayOff            0x08  
+#define Lcd_DisplayOn             0x0C
+       
+#define Lcd_CursorOn              0x0E
+#define Lcd_CursorBlink           0x0F
+       
+#define Lcd_EntryMode1            0x06 
+#endif 
+
+#ifndef LCD_CONFIG_H
+#define LCD_CONFIG_H
+
+#include "../../MCAL/DIO/DIO_INTERFACE.h"
+#define Lcd_RSPin      DIO_Pin0
+#define Lcd_RSGroup    Dio_GroupA
+
+#define Lcd_RWPin      DIO_Pin1
+#define Lcd_RWGroup    Dio_GroupA
+
+#define Lcd_EPin       DIO_Pin2
+#define Lcd_EGroup     Dio_GroupA
+
+
+#define Lcd_D4Pin      DIO_Pin0
+#define Lcd_D5Pin      DIO_Pin1
+#define Lcd_D6Pin      DIO_Pin2
+#define Lcd_D7Pin      DIO_Pin3
+
+#define Lcd_DataGroup  Dio_GroupC
+
+/*
+#define LCD_ENABLE_PULSE_US    1
+#define LCD_COMMAND_DELAY_US   100
+*/
+
+#endif
+
+#ifndef LCD_INTERFACE_H
+#define LCD_INTERFACE_H
+
+#include "../../MCAL/DIO/DIO_INTERFACE.h"
+#include "LCD_PRIVATE.h"
+#include "LCD_CONFIG.h"
+
+void LCD_Init(uint8_t ModeType);
+void LCD_WriteInstruction(uint8_t Instruction,uint8_t ModeType);
+void LCD_WriteData(uint8_t Data,uint8_t ModeType);
+void LCD_WriteString(uint8_t *String,uint8_t ModeType);
+void LCD_WriteNumber(uint8_t Number);
+void LCD_GotoXY(uint8_t X,uint8_t Y);
+
+
+#endif
+
+#include "LCD_Interface.h"
+#include <util/delay.h>
+
+void LCD_WriteData(uint8_t Data,uint8_t ModeType)
+{
+    if(ModeType==Lcd_8bitMode)
+    {
+    // RS -> 1 
+    DIO_WritePin(Lcd_RSGroup,Lcd_RSPin,High);
+    // RW -> 0
+    DIO_WritePin(Lcd_RWGroup,Lcd_RWPin,Low);
+    // Update Data 
+    DIO_WriteGroup(Lcd_DataGroup,Data);
+    // E -> 
+    DIO_WritePin(Lcd_EGroup,Lcd_EPin,High);
+    // wait 
+    _delay_ms(1);
+    // E -> 
+    DIO_WritePin(Lcd_EGroup,Lcd_EPin,Low);
+    }
+    else if(ModeType==Lcd_4bitMode)
+    {
+        // your code  
+    }    
+}
+
+void LCD_WriteInstruction(uint8_t Instruction,uint8_t ModeType)
+{
+    if(ModeType==Lcd_8bitMode)
+    {
+    // RS -> 1 
+    DIO_WritePin(Lcd_RSGroup,Lcd_RSPin,Low);
+    // RW -> 0
+    DIO_WritePin(Lcd_RWGroup,Lcd_RWPin,Low);
+    // Update Data 
+    DIO_WriteGroup(Lcd_DataGroup,Instruction);
+    // E -> 
+    DIO_WritePin(Lcd_EGroup,Lcd_EPin,High);
+    // wait 
+    _delay_ms(1);
+    // E -> 
+    DIO_WritePin(Lcd_EGroup,Lcd_EPin,Low);
+    }
+    else if(ModeType==Lcd_4bitMode)
+    {
+        // your code  
+    }
+}
+
+void LCD_Init(uint8_t ModeType)
+{
+    if (ModeType==Lcd_8bitMode)
+    {
+        //RS pin as output 
+        DIO_InitPin(Lcd_RSGroup,Lcd_RSPin,Output);
+        DIO_InitPin(Lcd_RWGroup,Lcd_RWPin,Output);
+        DIO_InitPin(Lcd_EGroup,Lcd_EPin,Output);
+        //Data
+        DIO_InitGroup(Lcd_DataGroup,0xFF);
+        // 8 bit Mode Init
+        _delay_ms(35);
+        LCD_WriteInstruction(Lcd_8bitMode2Line5x8F,Lcd_8bitMode);
+        _delay_ms(1);
+        LCD_WriteInstruction(Lcd_CursorOn,Lcd_8bitMode);
+        _delay_ms(1);
+        LCD_WriteInstruction(Lcd_ClearScreen,Lcd_8bitMode);
+        _delay_ms(2);
+        LCD_WriteInstruction(Lcd_EntryMode1,Lcd_8bitMode);
+        _delay_ms(1);
+    }
+}
+
+void LCD_WriteString(uint8_t *String, uint8_t ModeType)
+{
+    if(String!=Null)
+    {   
+        uint8_t count = 0 ;
+        while(String[count]!='\0')
+        {
+            LCD_WriteData(String[count],ModeType);
+            count++;
+        }
+    }
+}
+
+/**
+    -                 1 AC6 AC5 AC4 AC3 AC2 AC1 AC0  
+    - DigitAddress  : AC7 AC6 AC5 AC4 AC3 AC2 AC1 AC0
+    - Command       : 1    0   0   0   0   0   0   0
+    - 
+    - DigitAddress | 0x80 
+ */
+void LCD_GotoXY(uint8_t X , uint8_t Y)
+{
+    uint8_t DigitAddress = 0 ;
+    switch(X)
+    {
+        case 0 : DigitAddress = 0x00+Y ; break;
+        case 1 : DigitAddress = 0x40+Y ; break;
+    }
+    LCD_WriteInstruction(DigitAddress|0x80,Lcd_8bitMode);
+}
+
+void LCD_WriteNumber(uint8_t Number)
+{
+    uint8_t Tens=0;
+    uint8_t Units=0;
+
+    Tens=Number/10;
+    Units=Number%10;
+    if (Tens!=0)
+    {
+        LCD_WriteData(Tens + '0' , Lcd_8bitMode);
+    }
+    LCD_WriteData(Units + '0' , Lcd_8bitMode);
+}

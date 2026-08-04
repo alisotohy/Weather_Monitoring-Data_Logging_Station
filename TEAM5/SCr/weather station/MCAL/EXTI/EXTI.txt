@@ -1,0 +1,145 @@
+3.EXTI
+
+#ifndef EXTI_PRIVATE_H
+#define EXTI_PRIVATE_H
+
+#define Exti_ISC11 3
+#define Exti_ISC10 2 
+#define Exti_ISC01 1 
+#define Exti_ISC00 0 
+#define Exti_ISC2  6 
+#define Exti_INT1  7 
+#define Exti_INT0  6 
+#define Exti_INT2  5
+#define Exti_INTF1  7 
+#define Exti_INTF0  6
+#define Exti_INTF2  5
+#define Exti_LowLevel     4 
+#define Exti_AnyChange    5
+#define Exti_FallingEdge  6 
+#define Exti_RisingEdge   7 
+#define Exti_Interrupt0    3 
+#define Exti_Interrupt1    4 
+#define Exti_Interrupt2    5 
+#endif
+
+#ifndef EXTI_CONFIG_H
+#define EXTI_CONFIG_H
+#endif
+
+#ifndef EXTI_INTERFACE_H
+#define EXTI_INTERFACE_H
+
+#include <stdint.h>
+#include "../../COMMON/BITMATH.h"
+#include "../../COMMON/DEFINITION.h"
+
+#include "../../MCAL/DIO/DIO_INTERFACE.h"
+
+#include "EXTI_CONFIG.h"
+#include "EXTI_PRIVATE.h"
+
+
+void EXTI_Init(uint8_t InterruptName,uint8_t SensConfig);
+void EXTI_Enable(uint8_t InterruptName);
+void EXTI_Disable(uint8_t InterruptName);
+void EXTI_SetSenseControl(uint8_t InterruptName , uint8_t SenseMode);
+void EXTI_SetCallBack(uint8_t InterruptName , void (*Copy_pf)(void));
+
+#endif
+
+#include "EXTI_INTERFACE.h"
+
+void EXTI_Init(uint8_t InterruptName,uint8_t SensConfig)
+{
+    if(InterruptName==Exti_Interrupt0)
+    {
+        if(SensConfig==Exti_LowLevel)
+        {
+            ClearBit(MCUCR_Reg,Exti_ISC00);
+            ClearBit(MCUCR_Reg,Exti_ISC01);
+        }
+        else if (SensConfig==Exti_AnyChange)
+        {
+            SetBit(MCUCR_Reg,Exti_ISC00);
+            ClearBit(MCUCR_Reg,Exti_ISC01);   
+        }
+        else if (SensConfig==Exti_FallingEdge)
+        {
+            ClearBit(MCUCR_Reg,Exti_ISC00);
+            SetBit(MCUCR_Reg,Exti_ISC01);   
+        }
+        else if (SensConfig==Exti_RisingEdge)
+        {
+            SetBit(MCUCR_Reg,Exti_ISC00);
+            SetBit(MCUCR_Reg,Exti_ISC01);
+        }
+    }
+    else if (InterruptName==Exti_Interrupt1)
+    {
+        if(SensConfig==Exti_LowLevel)
+        {
+            ClearBit(MCUCR_Reg,Exti_ISC10);
+            ClearBit(MCUCR_Reg,Exti_ISC11);
+        }
+        else if (SensConfig==Exti_AnyChange)
+        {
+            SetBit(MCUCR_Reg,Exti_ISC10);
+            ClearBit(MCUCR_Reg,Exti_ISC11);
+        }
+        else if (SensConfig==Exti_FallingEdge)
+        {
+            ClearBit(MCUCR_Reg,Exti_ISC10);
+            SetBit(MCUCR_Reg,Exti_ISC11);
+        }
+        else if (SensConfig==Exti_RisingEdge)
+        {
+            SetBit(MCUCR_Reg,Exti_ISC10);
+            SetBit(MCUCR_Reg,Exti_ISC11);
+        }
+    }
+    else if (InterruptName==Exti_Interrupt2)
+    {
+        if(SensConfig==Exti_FallingEdge)
+        {
+            ClearBit(MCUCSR_Reg,Exti_ISC2);
+        }
+        else if (SensConfig==Exti_RisingEdge)
+        {
+            SetBit(MCUCSR_Reg,Exti_ISC2);
+        }
+    }
+}
+
+void EXTI_Enable(uint8_t InterruptName)
+{
+    if(InterruptName==Exti_Interrupt0)
+    {
+        SetBit(GICR_Reg,Exti_INT0);
+    }
+    else if(InterruptName==Exti_Interrupt1)
+    {
+        SetBit(GICR_Reg,Exti_INT1);
+    }
+    else if(InterruptName==Exti_Interrupt2)
+    {
+        SetBit(GICR_Reg,Exti_INT2);
+    }
+}
+
+
+void EXTI_Disable(uint8_t InterruptName)
+{
+    if(InterruptName==Exti_Interrupt0)
+    {
+        ClearBit(GICR_Reg,Exti_INT0);
+    }
+    else if(InterruptName==Exti_Interrupt1)
+    {
+        ClearBit(GICR_Reg,Exti_INT1);
+    }
+    else if(InterruptName==Exti_Interrupt2)
+    {
+        ClearBit(GICR_Reg,Exti_INT2);
+    }
+}

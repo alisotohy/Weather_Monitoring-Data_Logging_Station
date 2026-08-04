@@ -1,0 +1,66 @@
+2.BUZZER
+
+#ifndef BUZZER_PRIVATE_H
+#define BUZZER_PRIVATE_H
+
+#define BUZZER_ACTIVE_LOW      0
+#define BUZZER_ACTIVE_HIGH     1
+
+#endif
+
+#ifndef BUZZER_CONFIG_H
+#define BUZZER_CONFIG_H
+
+#define BUZZER_GROUP        Dio_GroupB
+#define BUZZER_PIN          DIO_Pin1
+
+#define BUZZER_STATE        BUZZER_ACTIVE_HIGH
+
+#endif
+
+#ifndef BUZZER_INTERFACE_H
+#define BUZZER_INTERFACE_H
+
+#include "../../MCAL/DIO/DIO_INTERFACE.h"
+#include "BUZZER_CONFIG.h"
+#include "BUZZER_PRIVATE.h"
+
+void BUZZER_Init(void);
+
+void BUZZER_On(void);
+
+void BUZZER_Off(void);
+
+#endif
+
+#include "BUZZER_INTERFACE.h"
+
+void BUZZER_Init(void)
+{
+    DIO_InitPin(BUZZER_GROUP , BUZZER_PIN , Output);
+    BUZZER_Off();
+}
+
+void BUZZER_On(void)
+{
+    if(BUZZER_STATE == BUZZER_ACTIVE_HIGH)
+    {
+        DIO_WritePin(BUZZER_GROUP , BUZZER_PIN , High);
+    }
+    else if(BUZZER_STATE == BUZZER_ACTIVE_LOW)
+    {
+        DIO_WritePin(BUZZER_GROUP , BUZZER_PIN , Low);
+    }
+}
+
+void BUZZER_Off(void)
+{
+    if(BUZZER_STATE == BUZZER_ACTIVE_HIGH)
+    {
+        DIO_WritePin(BUZZER_GROUP , BUZZER_PIN , Low);    
+    }
+    else if(BUZZER_STATE == BUZZER_ACTIVE_LOW)
+    {
+        DIO_WritePin(BUZZER_GROUP , BUZZER_PIN , High);
+    }
+}

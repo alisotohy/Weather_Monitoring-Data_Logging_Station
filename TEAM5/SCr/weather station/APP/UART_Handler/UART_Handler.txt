@@ -1,0 +1,131 @@
+4.UARTHandler
+
+#ifndef UART_HANDLER_PRIVATE_H
+#define UART_HANDLER_PRIVATE_H
+
+
+/* Supported UART Commands */
+#define CMD_HELP        "HELP"
+#define CMD_STATUS      "STATUS"
+#define CMD_CURRENT     "CURRENT"
+#define CMD_READ_LOG    "READ LOG"
+#define CMD_CLEAR_LOG   "CLEAR LOG"
+
+
+#endif
+
+#ifndef UART_HANDLER_CONFIG_H
+#define UART_HANDLER_CONFIG_H
+
+
+/* Maximum received command length */
+#define UART_COMMAND_LENGTH      20
+
+
+#endif
+
+#ifndef UART_HANDLER_INTERFACE_H
+#define UART_HANDLER_INTERFACE_H
+
+#include <stdint.h>
+
+#include "../../MCAL/UART/UART_INTERFACE.h"
+
+#include "../Monitoring/Monitoring_Interface.h"
+#include "../AlarmManager/AlarmManager_Interface.h"
+#include "../DataLogger/DataLogger_Interface.h"
+
+#include "UART_Handler_Private.h"
+#include "UART_Handler_Config.h"
+
+/* Initialize UART Module */
+void UARTManager_Init(void);
+
+/* Receive and process UART commands */
+void UARTManager_Task(void);
+
+/* Send current measurements */
+void UARTManager_SendCurrentData(uint8_t Temp, uint8_t Light, uint8_t Alarm);
+
+
+#endif
+
+#include "UART_Handler_Interface.h"
+
+#include <string.h>
+
+/* UART configuration */
+static Uart_Config_t UART_Config;
+
+/* Buffer used to receive commands */
+static uint8_t Command[UART_COMMAND_LENGTH];
+
+/*Initialize UART*/
+void UARTManager_Init(void)
+{
+    /* Configure UART */
+    UART_Config.ModeSelect          = Uart_AsynchronousMode;
+    UART_Config.StopBitSelect       = Uart_1StopBit;
+    UART_Config.ParitySelect        = Uart_ParityDisabled;
+    UART_Config.SizeCharacterSelect = Uart_8BitSize;
+    UART_Config.SpeedMode           = Uart_NormalSpeed;
+    UART_Config.BaudRate            = 9600;
+    UART_Config.InterruptSelect     = Uart_InterruptDisabled;
+    UART_Config.EnbaleSelect        = Uart_EnableRxAndTx;
+
+    UART_Init(UART_Config);
+}
+
+/*Send Current Weather Data*/
+void UARTManager_SendCurrentData(uint8_t Temp, uint8_t Light, uint8_t Alarm)
+{
+    UART_SendStringPolling("Current Data\r\n");
+
+    UART_SendStringPolling("Temp = ");
+    UART_SendBytePolling((Temp / 10) + '0');
+    UART_SendBytePolling((Temp % 10) + '0');
+    UART_SendStringPolling(" C\r\n");
+
+    UART_SendStringPolling("Light = ");
+    UART_SendBytePolling((Light / 10) + '0');
+    UART_SendBytePolling((Light % 10) + '0');
+    UART_SendStringPolling(" %\r\n");
+
+    if(Alarm)
+    {
+        UART_SendStringPolling("Alarm = ON\r\n");
+    }
+    else
+    {
+        UART_SendStringPolling("Alarm = OFF\r\n");
+    }
+}
+
+/*Process UART Commands*/
+void UARTManager_Task(void)
+{
+    /* Receive command from PC */
+    UART_ReceiveStringPolling(Command,'\r');
+
+    if(strcmp((char*)Command,CMD_HELP)==0)
+    {
+        UART_SendStringPolling("HELP\r\n");
+        UART_SendStringPolling("STATUS\r\n");
+        UART_SendStringPolling("CURRENT\r\n");
+        UART_SendStringPolling("READ LOG\r\n");
+        UART_SendStringPolling("CLEAR LOG\r\n");
+    }
+
+    else if(strcmp((char*)Command,CMD_CLEAR_LOG)==0)
+    {
+        DataLogger_Clear();
+
+        UART_SendStringPolling("LOG CLEARED\r\n");
+    }
+
+    /* READ LOG هنعمله بعدين */
+
+    /* STATUS هنعمله بعدين */
+
+    /* CURRENT هنعمله بعدين */
+}

@@ -1,0 +1,32 @@
+4.GIE
+
+#ifndef  GIE_PRIVATE_H
+#define  GIE_PRIVATE_H
+
+#define I_Bit    7 
+
+#endif 
+#ifndef  GIE_INTERFACE_H
+#define  GIE_INTERFACE_H
+
+#include "../../COMMON/BITMATH.h"
+#include "../../COMMON/Defines.h"
+#include "../Atmega32RegMap.h"
+#include "GIE_PRIVATE.h"
+
+void GIE_Enable();
+void GIE_Disable();
+
+
+#endif 
+#include "GIE_INTERFACE.h"
+
+
+void GIE_Enable()
+{
+    SetBit(SREG_Reg,I_Bit);
+}
+void GIE_Disable()
+{
+    ClearBit(SREG_Reg,I_Bit);
+}

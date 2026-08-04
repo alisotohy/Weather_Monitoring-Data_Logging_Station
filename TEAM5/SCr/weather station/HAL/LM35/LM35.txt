@@ -1,0 +1,65 @@
+6.LM35
+
+#ifndef LM35_PRIVATE_H
+#define LM35_PRIVATE_H
+
+// LM35 outputs 10 mV per 1 degree Celsius, linear from 0V
+#define LM35_mV_Per_Degree     10
+
+#endif
+
+#ifndef LM35_CONFIG_H
+#define LM35_CONFIG_H
+
+// Which ADC channel the LM35 output is physically connected to (0 -> 7)
+#define LM35_ADC_Channel        5
+
+// Reference voltage in Volts - MUST match what you configure in ADC_Init
+// (e.g. 5 for AVCC, 2.56 for Adc_Internal)
+#define LM35_Vref               5
+
+// ADC resolution steps (10-bit ADC = 1024)
+#define LM35_ADC_Resolution     1024
+
+#endif
+
+#ifndef LM35_INTERFACE_H
+#define LM35_INTERFACE_H
+
+#include <stdint.h>
+#include "../../COMMON/BITMATH.h"
+#include "../../COMMON/Defines.h"
+#include "../../MCAL/ADC/ADC_INTERFACE.h"
+#include "LM35_Private.h"
+#include "LM35_Config.h"
+
+/*
+ * Description : Reads the LM35 sensor through the ADC (blocking/polling)
+ *               and returns the temperature in whole degrees Celsius.
+ * Note        : ADC_Init() must already be called (once, in main) before
+ *               using this function. Uses ADC_Read internally.
+ */
+uint8_t LM35_GetTemperature(void);
+
+#endif
+
+#include "LM35_Interface.h"
+
+uint8_t LM35_GetTemperature(void)
+{
+    uint16_t Local_ADCDigitalValue = 0;
+    uint32_t Local_Voltage_mV      = 0;
+    uint8_t  Local_Temperature     = 0;
+
+    // 1) Read the raw digital value from the ADC channel connected to LM35
+    Local_ADCDigitalValue = ADC_Read(LM35_ADC_Channel);
+
+    // 2) Convert the digital value into an actual voltage in millivolts
+    //    Voltage(mV) = (ADC_Value * Vref(V) * 1000) / Resolution
+    Local_Voltage_mV = ((uint32_t)Local_ADCDigitalValue * LM35_Vref * 1000UL) / LM35_ADC_Resolution;
+
+    // 3) Convert voltage to temperature (LM35 -> 10 mV per 1 degree Celsius)
+    Local_Temperature = (uint8_t)(Local_Voltage_mV / LM35_mV_Per_Degree);
+
+    return Local_Temperature;
+}

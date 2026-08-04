@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+   5206	    196	     78	   5480	   1568	C:\HTI\3rd term mechatronics\NTI\DAY 16\Ebedded Projekt\release\firmware.elf

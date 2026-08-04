@@ -1,0 +1,149 @@
+3.EEPROM
+
+#ifndef EEPROM_PRIVATE_H
+#define EEPROM_PRIVATE_H
+
+/*-------------------------------------------------
+ *              EECR Register Bits
+ *-------------------------------------------------*/
+#define Eeprom_EERIE    3   // EEPROM Ready Interrupt Enable
+#define Eeprom_EEMWE    2   // EEPROM Master Write Enable
+#define Eeprom_EEWE     1   // EEPROM Write Enable
+#define Eeprom_EERE     0   // EEPROM Read Enable
+
+/*-------------------------------------------------
+ *   I-Bit in SREG - needed to protect the write
+ *   sequence's 4-cycle timing window from being
+ *   interrupted (kept local to this driver on
+ *   purpose, instead of reaching into GIE_Private.h)
+ *-------------------------------------------------*/
+#define Eeprom_GlobalIntBit   7
+
+/*-------------------------------------------------
+ *   ATmega32 internal EEPROM size = 1024 bytes
+ *   (10-bit address, EEAR9:0)
+ *-------------------------------------------------*/
+#define Eeprom_AddressMask    0x03FF
+
+#endif
+
+#ifndef EEPROM_CONFIG_H
+#define EEPROM_CONFIG_H
+
+#endif
+
+#ifndef EEPROM_INTERFACE_H
+#define EEPROM_INTERFACE_H
+
+#include <stdint.h>
+#include "../../COMMON/Bitmath.h"
+#include "../../COMMON/Defines.h"
+#include "../../MCAL/Atmega32RegMap.h"
+#include "EEPROM_Private.h"
+#include "EEPROM_Config.h"
+
+/*
+ * Description : Writes a single byte to internal EEPROM at the given
+ *               address. Blocking - waits for any previous write to
+ *               finish first, and waits for this write to complete
+ *               before returning (~3.4ms on real hardware).
+ */
+void EEPROM_WriteByte(uint16_t Address, uint8_t Data);
+
+/*
+ * Description : Reads a single byte from internal EEPROM at the given
+ *               address into *Data. Blocking - waits for any pending
+ *               write to finish first (reads are otherwise fast).
+ */
+void EEPROM_ReadByte(uint16_t Address, uint8_t *Data);
+
+/*
+ * Description : Writes Length consecutive bytes starting at Address.
+ *               Blocking - each byte waits for the previous one to finish.
+ */
+void EEPROM_WriteBlock(uint16_t Address, uint8_t *Data, uint16_t Length);
+
+/*
+ * Description : Reads Length consecutive bytes starting at Address into
+ *               the Data buffer (caller must ensure it's big enough).
+ */
+void EEPROM_ReadBlock(uint16_t Address, uint8_t *Data, uint16_t Length);
+
+#endif
+
+#include "EEPROM_Interface.h"
+
+void EEPROM_WriteByte(uint16_t Address, uint8_t Data)
+{
+    uint8_t Local_SREG_Backup = 0;
+
+    Address &= Eeprom_AddressMask;
+
+    // 1) Wait for any previous write to finish
+    while (ReadBit(EECR_Reg, Eeprom_EEWE) == 1);
+
+    // 2) Set up address and data registers
+    EEARH_Reg = (uint8_t)(Address >> 8);
+    EEARL_Reg = (uint8_t)(Address);
+    EEDR_Reg  = Data;
+
+    // 3) The next two writes (EEMWE then EEWE) must happen within 4 clock
+    //    cycles of each other, or the write is silently aborted by hardware.
+    //    An interrupt firing in between would blow that window, so save
+    //    the current global-interrupt state and disable it for this
+    //    critical section, then restore exactly what it was before.
+    Local_SREG_Backup = SREG_Reg;
+    ClearBit(SREG_Reg, Eeprom_GlobalIntBit);
+
+    SetBit(EECR_Reg, Eeprom_EEMWE);
+    SetBit(EECR_Reg, Eeprom_EEWE);
+
+    SREG_Reg = Local_SREG_Backup;
+}
+
+
+void EEPROM_ReadByte(uint16_t Address, uint8_t *Data)
+{
+    if (Data != Null)
+    {
+        Address &= Eeprom_AddressMask;
+
+        // Wait for any pending write to finish first
+        while (ReadBit(EECR_Reg, Eeprom_EEWE) == 1);
+
+        EEARH_Reg = (uint8_t)(Address >> 8);
+        EEARL_Reg = (uint8_t)(Address);
+
+        SetBit(EECR_Reg, Eeprom_EERE);
+
+        *Data = EEDR_Reg;
+    }
+}
+
+
+void EEPROM_WriteBlock(uint16_t Address, uint8_t *Data, uint16_t Length)
+{
+    uint16_t Local_Counter = 0;
+
+    if (Data != Null)
+    {
+        for (Local_Counter = 0; Local_Counter < Length; Local_Counter++)
+        {
+            EEPROM_WriteByte(Address + Local_Counter, Data[Local_Counter]);
+        }
+    }
+}
+
+
+void EEPROM_ReadBlock(uint16_t Address, uint8_t *Data, uint16_t Length)
+{
+    uint16_t Local_Counter = 0;
+
+    if (Data != Null)
+    {
+        for (Local_Counter = 0; Local_Counter < Length; Local_Counter++)
+        {
+            EEPROM_ReadByte(Address + Local_Counter, &Data[Local_Counter]);
+        }
+    }
+}

@@ -1,0 +1,80 @@
+3.Monitoring
+
+#ifndef MONITORING_PRIVATE_H
+#define MONITORING_PRIVATE_H
+
+/* Nothing private yet */
+
+#endif
+
+#ifndef MONITORING_CONFIG_H
+#define MONITORING_CONFIG_H
+
+/* LM35 ADC Channel */
+#define MONITOR_TEMP_CHANNEL    ADC_SinglEndedChannel0
+
+/* LDR ADC Channel */
+#define MONITOR_LIGHT_CHANNEL   ADC_SinglEndedChannel1
+
+
+#endif
+
+#ifndef MONITORING_INTERFACE_H
+#define MONITORING_INTERFACE_H
+
+#include <stdint.h>
+
+#include "../../MCAL/ADC/ADC_INTERFACE.h"
+#include "../../HAL/LM35/LM35_Interface.h"
+#include "../../HAL/LDR/LDR_Interface.h"
+#include "Monitoring_Config.h"
+#include "Monitoring_Private.h"
+
+
+/* Structure that stores current sensor readings */
+typedef struct
+{
+    uint8_t Temperature;
+    uint8_t Light;
+}Monitoring_Data_t;
+
+/* Initialize monitoring module */
+void Monitoring_Init(void);
+
+/* Update all sensor readings */
+void Monitoring_Update(void);
+
+/* Return latest sensor values */
+Monitoring_Data_t Monitoring_GetData(void);
+
+
+#endif
+
+#include "Monitoring_Interface.h"
+
+
+/* Store latest sensor readings */
+static Monitoring_Data_t CurrentData;
+
+/*Initialize monitoring module */
+void Monitoring_Init(void)
+{
+    CurrentData.Temperature = 0;
+    CurrentData.Light = 0;
+}
+
+/*Read all sensors and update stored values*/
+void Monitoring_Update(void)
+{
+    /* Read current temperature from LM35 */
+    CurrentData.Temperature = LM35_GetTemperature();
+
+    /* Read current light percentage */
+    CurrentData.Light = LDR_GetLightPercentage();
+}
+
+/*Return latest sensor readings*/
+Monitoring_Data_t Monitoring_GetData(void)
+{
+    return CurrentData;
+}

@@ -1,0 +1,157 @@
+5.WeatherController
+
+#ifndef WEATHER_CONTROLLER_PRIVATE_H
+#define WEATHER_CONTROLLER_PRIVATE_H
+
+/* Current Sensor Values */
+static uint8_t Global_Temperature;
+static uint8_t Global_Light;
+
+/* Current Alarm State */
+static uint8_t Global_AlarmState;
+
+/* Counter used for EEPROM logging */
+static uint16_t Global_LogCounter;
+
+#endif
+
+#ifndef WEATHER_CONTROLLER_CONFIG_H
+#define WEATHER_CONTROLLER_CONFIG_H
+
+/* Save data every 5 cycles */
+#define WEATHER_LOG_PERIOD     5
+
+#endif
+
+#ifndef WEATHER_CONTROLLER_INTERFACE_H
+#define WEATHER_CONTROLLER_INTERFACE_H
+
+#include "Weather_Controller_Config.h"
+#include "Weather_Controller_Private.h"
+
+#include "../../HAL/LM35/LM35_Interface.h"
+#include "../../HAL/LDR/LDR_Interface.h"
+#include "../../HAL/LCD/LCD_Interface.h"
+#include "../../HAL/LED/LED_INTERFACE.h"
+#include "../../HAL/BUZZER/BUZZER_INTERFACE.h"
+
+/* Initialize complete weather station */
+void WeatherController_Init(void);
+
+/* Run Weather Station */
+void WeatherController_Run(void);
+
+
+
+#endif
+
+#include "Weather_Controller_Interface.h"
+
+
+/* APP Modules */
+#include "../Monitoring/Monitoring_Interface.h"
+#include "../AlarmManager/AlarmManager_Interface.h"
+#include "../DataLogger/DataLogger_Interface.h"
+#include "../UART_Handler/UART_Handler_Interface.h"
+
+/* HAL Drivers */
+#include "../../HAL/LCD/LCD_Interface.h"
+#include "../../HAL/LED/LED_Interface.h"
+#include "../../HAL/BUZZER/BUZZER_Interface.h"
+
+/* MCAL Drivers */
+#include "../../MCAL/ADC/ADC_Interface.h"
+#include "../../MCAL/UART/UART_Interface.h"
+
+/*
+----------------------------------------------------
+Initialize Complete Weather Station
+----------------------------------------------------
+*/
+void WeatherController_Init(void)
+{
+    /* Initialize ADC Driver */
+    ADC_Init();
+
+    /* Initialize LCD */
+    LCD_Init();
+
+    /* Initialize Status LED */
+    LED_Init();
+
+    /* Initialize Buzzer */
+    BUZZER_Init();
+
+    /* Initialize UART */
+    UART_Init(Uart_Config);
+
+    /* Initialize Data Logger */
+    DataLogger_Init();
+
+    /* Initialize Monitoring Module */
+    Monitoring_Init();
+
+    /* Initialize Alarm Manager */
+    AlarmManager_Init();
+
+    /* Clear LCD Screen */
+    LCD_Clear();
+
+    /* Display Welcome Message */
+    LCD_WriteString("Weather Station");
+
+    _delay_ms(1000);
+
+    LCD_Clear();
+
+    /* Reset Variables */
+    Global_Temperature = 0;
+    Global_Light = 0;
+    Global_AlarmState = 0;
+    Global_LogCounter = 0;
+}
+
+/*
+----------------------------------------------------
+Main Weather Controller Task
+Call this function inside while(1)
+----------------------------------------------------
+*/
+void WeatherController_Run(void)
+{
+    /* Read Temperature and Light Sensors */
+    Monitoring_Update();
+
+    /* Get Latest Temperature */
+    Global_Temperature = Monitoring_GetTemperature();
+
+    /* Get Latest Light Percentage */
+    Global_Light = Monitoring_GetLight();
+
+    /* Check Alarm Conditions */
+    Global_AlarmState =
+    AlarmManager_Check(Global_Temperature, Global_Light);
+
+    /* Display Current Values on LCD */
+    Monitoring_Display();
+
+    /* Count System Cycles */
+    Global_LogCounter++;
+
+    /* Save Data Every Period */
+    if(Global_LogCounter >= WEATHER_LOG_PERIOD)
+    {
+        DataLogger_Save
+        (
+            Global_Temperature,
+            Global_Light,
+            Global_AlarmState
+        );
+
+        /* Restart Counter */
+        Global_LogCounter = 0;
+    }
+
+    /* Check UART Commands */
+    UART_Handler_Task();
+}
