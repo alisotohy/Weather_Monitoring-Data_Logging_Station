@@ -40,14 +40,14 @@ void DataLogger_Save(uint8_t Temp, uint8_t Light, uint8_t Alarm)
 
     if(Global_RecordCounter >= LOGGER_MAX_RECORDS) return;
 
-    // 1) اكتب العداد الجديد في EEPROM (قبل الـ Record)
-    // خلي بالك: بنكتب (Global_RecordCounter + 1) في EEPROM
+    // 1)  EEPROM  ( Record)
+    //  (Global_RecordCounter + 1)  EEPROM
     EEPROM_WriteByte(LOGGER_COUNTER_ADDRESS, (uint8_t)(Global_RecordCounter + 1));
 
-    // 2) زود العداد في الـ RAM
+    // 2)+1 counter in RAM
     Global_RecordCounter++;
 
-    // 3) اكتب الـ Record على العنوان الجديد
+    // 3) write new record
     Record.Temperature = Temp;
     Record.Light = Light;
     Record.Alarm = Alarm;
